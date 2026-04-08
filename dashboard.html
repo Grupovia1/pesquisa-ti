@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Pesquisa de Satisfação TI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #020b18;
+    --surface: rgba(0,212,255,0.04);
+    --border: rgba(0,212,255,0.18);
+    --border-glow: rgba(0,212,255,0.5);
+    --cyan: #00d4ff;
+    --cyan2: #00f5d4;
+    --accent: #7b2fff;
+    --accent2: #ff2d78;
+    --green: #00e676;
+    --yellow: #ffd600;
+    --text: #cce8f4;
+    --text-dim: #5a8fa8;
+    --card: rgba(2,18,36,0.85);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: 'Exo 2', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0; pointer-events: none;
+  }
+  .orb { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.1; z-index: 0; pointer-events: none; }
+  .orb-1 { width: 600px; height: 600px; background: var(--accent); top: -200px; left: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--cyan); bottom: -100px; right: -50px; }
+
+  .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 36px 24px 80px; }
+
+  /* HEADER */
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; flex-wrap: wrap; gap: 16px; }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .header-logo { height: 56px; width: auto; border-radius: 10px; box-shadow: 0 0 20px rgba(0,212,255,0.2); }
+  .header-title h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem; font-weight: 700;
+    background: linear-gradient(135deg, #fff 40%, var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .header-title p { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; letter-spacing: 1px; }
+  .btn-refresh {
+    font-family: 'Orbitron', monospace; font-size: 0.7rem; letter-spacing: 2px;
+    padding: 10px 20px; border: 1px solid var(--border-glow);
+    background: transparent; color: var(--cyan); border-radius: 6px;
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+  }
+  .btn-refresh:hover { background: rgba(0,212,255,0.1); }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.75rem; color: var(--text-dim);
+    font-family: 'Orbitron', monospace; letter-spacing: 1px;
+    margin-bottom: 28px;
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 1.5s infinite; flex-shrink: 0; }
+  .status-dot.loading { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+  .status-dot.error { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); animation: none; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media(max-width:900px){ .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+  @media(max-width:500px){ .kpi-grid { grid-template-columns: 1fr; } }
+  .kpi-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 22px;
+    position: relative; overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.cyan::before { background: linear-gradient(90deg, var(--cyan), var(--cyan2)); }
+  .kpi-card.purple::before { background: linear-gradient(90deg, var(--accent), #c060ff); }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.pink::before { background: linear-gradient(90deg, var(--accent2), #ff8a80); }
+  .kpi-label { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; font-family: 'Orbitron', monospace; margin-bottom: 10px; }
+  .kpi-value { font-family: 'Orbitron', monospace; font-size: 2rem; font-weight: 700; color: #fff; }
+  .kpi-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+  /* CHART GRID */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .charts-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media(max-width:900px){ .charts-grid, .charts-grid-3 { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .chart-title {
+    font-family: 'Orbitron', monospace; font-size: 0.65rem;
+    letter-spacing: 2.5px; color: var(--cyan); text-transform: uppercase;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .chart-title::before { content: ''; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 8px var(--cyan); flex-shrink: 0; }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* TABLE */
+  .table-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px;
+    animation: fadeUp 0.5s 0.2s ease both;
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  thead th {
+    font-family: 'Orbitron', monospace; font-size: 0.58rem; letter-spacing: 2px;
+    color: var(--text-dim); text-transform: uppercase;
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    text-align: left; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid rgba(0,212,255,0.06); transition: background 0.2s; }
+  tbody tr:hover { background: rgba(0,212,255,0.04); }
+  tbody td { padding: 11px 12px; color: var(--text); vertical-align: middle; }
+  .badge {
+    display: inline-block; font-size: 0.7rem; padding: 3px 10px;
+    border-radius: 20px; font-weight: 500;
+  }
+  .badge-green { background: rgba(0,230,118,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(255,214,0,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(255,45,120,0.15); color: var(--accent2); }
+  .stars-display { color: var(--cyan); letter-spacing: 2px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-family: 'Orbitron', monospace; font-size: 0.75rem; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrapper">
+
+  <header>
+    <div class="header-left">
+      <img class="header-logo" src="data:image/png;base64,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" alt="Grupo Via1">
+      <div class="header-title">
+        <h1>Dashboard de Satisfação</h1>
+        <p>Departamento de TI · Suporte &amp; Infraestrutura</p>
+      </div>
+    </div>
+    <button class="btn-refresh" onclick="loadData()">↻ &nbsp; Atualizar</button>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-dot loading" id="statusDot"></div>
+    <span id="statusText">Conectando ao servidor...</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card cyan">
+      <div class="kpi-label">Total Respostas</div>
+      <div class="kpi-value" id="kpiTotal">—</div>
+      <div class="kpi-sub">avaliações recebidas</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Média NPS</div>
+      <div class="kpi-value" id="kpiNps">—</div>
+      <div class="kpi-sub">escala de 0 a 10</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Qualidade Média</div>
+      <div class="kpi-value" id="kpiQuality">—</div>
+      <div class="kpi-sub">escala de 1 a 5 estrelas</div>
+    </div>
+    <div class="kpi-card pink">
+      <div class="kpi-label">Tempo Médio</div>
+      <div class="kpi-value" id="kpiTempo">—</div>
+      <div class="kpi-sub">satisfação no atendimento</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">NPS por Resposta</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartNps" role="img" aria-label="NPS por resposta"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Qualidade da Solução</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartQuality" role="img" aria-label="Distribuição de qualidade"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-grid-3">
+    <div class="chart-card">
+      <div class="chart-title">Setor / Departamento</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartSetor" role="img" aria-label="Respostas por setor"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tipo de Chamado</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartChamado" role="img" aria-label="Tipos de chamado"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tempo de Resposta</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartTempo" role="img" aria-label="Satisfação com tempo"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="chart-title">Últimas Respostas</div>
+    <div id="tableContainer"></div>
+  </div>
+
+</div>
+
+<script>
+  const JSONBIN_API_KEY = '$2a$10$3/3x/RwD6EBTZ4X2eQFyNOhON0b8M88NwR.Hs9PAH4IDNUPjOiKim';
+  const JSONBIN_BIN_ID  = '69d6a9f336566621a890a202';
+
+  const COLORS = ['#00d4ff','#7b2fff','#00f5d4','#ff2d78','#ffd600','#00e676','#ff9100','#e040fb','#40c4ff','#69f0ae'];
+  const TEMPOS = {1:'Muito Lento',2:'Lento',3:'Regular',4:'Rápido',5:'Excelente'};
+
+  let charts = {};
+
+  function setStatus(state, text) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + (state === 'ok' ? '' : state);
+    document.getElementById('statusText').textContent = text;
+  }
+
+  function avg(arr) {
+    const vals = arr.filter(v => v !== null && v !== undefined && v !== '');
+    if (!vals.length) return '—';
+    return (vals.reduce((a, b) => a + parseFloat(b), 0) / vals.length).toFixed(1);
+  }
+
+  function destroyChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  }
+
+  function makeBarChart(id, labels, data, color) {
+    destroyChart(id);
+    const ctx = document.getElementById(id);
+    charts[id] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data, backgroundColor: color || COLORS[0], borderRadius: 4, borderSkipped: false }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#5a8fa8', font: { size: 11 }, maxRotation: 30 }, grid: { color: 'rgba(0,212,255,0.06)' } },
+          y: { ticks: { color: '#5a8fa8', font: { size: 11 }, stepSize: 1 }, grid: { color: 'rgba(0,212,255,0.06)' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function makeLineChart(id, labels, data) {
+    destroyChart(id);
+    const ctx = document.getElementById(id);
+    charts[id] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)',
+          pointBackgroundColor: '#00d4ff', pointRadius: 4, tension: 0.3, fill: true
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#5a8fa8', font: { size: 11 } }, grid: { color: 'rgba(0,212,255,0.06)' } },
+          y: { ticks: { color: '#5a8fa8', font: { size: 11 } }, grid: { color: 'rgba(0,212,255,0.06)' }, min: 0, max: 10 }
+        }
+      }
+    });
+  }
+
+  function countBy(arr, key) {
+    return arr.reduce((acc, r) => {
+      const val = r[key] || 'N/A';
+      acc[val] = (acc[val] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  function npsLabel(v) {
+    const n = parseInt(v);
+    if (n >= 9) return 'Promotor';
+    if (n >= 7) return 'Neutro';
+    return 'Detrator';
+  }
+
+  function npsColor(v) {
+    const n = parseInt(v);
+    if (n >= 9) return '#00e676';
+    if (n >= 7) return '#ffd600';
+    return '#ff2d78';
+  }
+
+  function renderTable(data) {
+    const container = document.getElementById('tableContainer');
+    if (!data.length) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Nenhuma resposta registrada ainda</p></div>';
+      return;
+    }
+    const recent = [...data].reverse().slice(0, 20);
+    const rows = recent.map(r => {
+      const q = parseInt(r.qualidade) || 0;
+      const stars = '★'.repeat(q) + '☆'.repeat(5 - q);
+      const npsVal = r.nps !== null && r.nps !== undefined ? r.nps : '—';
+      const npsClass = r.nps >= 9 ? 'badge-green' : r.nps >= 7 ? 'badge-yellow' : 'badge-red';
+      return `<tr>
+        <td>${r.data_hora || '—'}</td>
+        <td>${r.nome || '—'}</td>
+        <td>${r.setor || '—'}</td>
+        <td style="font-size:0.75rem">${(r.chamado || '—').replace(/^[^\s]+ /,'')}</td>
+        <td><span class="stars-display" style="font-size:0.9rem">${stars}</span></td>
+        <td><span class="badge ${npsClass}">${npsVal}</span></td>
+        <td style="color:var(--text-dim);font-size:0.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.comentario || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    container.innerHTML = `<table>
+      <thead><tr>
+        <th>Data/Hora</th><th>Nome</th><th>Setor</th><th>Chamado</th><th>Qualidade</th><th>NPS</th><th>Comentário</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  async function loadData() {
+    setStatus('loading', 'Carregando dados...');
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+        headers: { 'X-Master-Key': JSONBIN_API_KEY }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const data = Array.isArray(json.record) ? json.record : [];
+
+      setStatus('ok', `${data.length} resposta(s) carregada(s) · Atualizado em ${new Date().toLocaleTimeString('pt-BR')}`);
+
+      // KPIs
+      document.getElementById('kpiTotal').textContent = data.length;
+      document.getElementById('kpiNps').textContent = avg(data.map(r => r.nps));
+      document.getElementById('kpiQuality').textContent = avg(data.map(r => r.qualidade));
+      const tempoAvg = avg(data.map(r => r.tempo_resp));
+      document.getElementById('kpiTempo').textContent = tempoAvg !== '—' ? TEMPOS[Math.round(tempoAvg)] || tempoAvg : '—';
+
+      if (!data.length) {
+        ['chartNps','chartQuality','chartSetor','chartChamado','chartTempo'].forEach(id => {
+          destroyChart(id);
+          const ctx = document.getElementById(id);
+          const chart2d = ctx.getContext('2d');
+          chart2d.clearRect(0,0,ctx.width,ctx.height);
+        });
+        renderTable([]);
+        return;
+      }
+
+      // NPS line
+      const npsLabels = data.map((_, i) => '#' + (i + 1));
+      const npsVals   = data.map(r => r.nps !== null ? parseInt(r.nps) : null);
+      makeLineChart('chartNps', npsLabels, npsVals);
+
+      // Quality bar
+      const qDist = {1:0,2:0,3:0,4:0,5:0};
+      data.forEach(r => { if (r.qualidade) qDist[r.qualidade] = (qDist[r.qualidade]||0)+1; });
+      makeBarChart('chartQuality', ['1★','2★','3★','4★','5★'], Object.values(qDist), ['#ff2d78','#ff9100','#ffd600','#00f5d4','#00e676']);
+
+      // Setor
+      const setorCount = countBy(data, 'setor');
+      makeBarChart('chartSetor', Object.keys(setorCount), Object.values(setorCount), COLORS.slice(0, Object.keys(setorCount).length));
+
+      // Chamado (clean emoji)
+      const chamCount = countBy(data, 'chamado');
+      const chamLabels = Object.keys(chamCount).map(k => k.replace(/^[^\s]+ /,'').substring(0,18));
+      makeBarChart('chartChamado', chamLabels, Object.values(chamCount), '#7b2fff');
+
+      // Tempo
+      const tempoDist = {1:0,2:0,3:0,4:0,5:0};
+      data.forEach(r => { if (r.tempo_resp) tempoDist[r.tempo_resp] = (tempoDist[r.tempo_resp]||0)+1; });
+      makeBarChart('chartTempo', Object.values(TEMPOS), Object.values(tempoDist), ['#ff2d78','#ff9100','#ffd600','#00f5d4','#00e676']);
+
+      renderTable(data);
+
+    } catch (err) {
+      setStatus('error', 'Erro ao carregar dados: ' + err.message);
+      console.error(err);
+    }
+  }
+
+  loadData();
+  setInterval(loadData, 60000);
+</script>
+</body>
+</html>
