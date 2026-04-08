@@ -148,6 +148,92 @@
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
   .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
   .empty-state p { font-family: 'Orbitron', monospace; font-size: 0.75rem; letter-spacing: 2px; }
+
+  /* ACTION BUTTONS */
+  .btn-edit, .btn-del {
+    font-size: 0.72rem; padding: 5px 12px; border-radius: 5px;
+    cursor: pointer; border: 1px solid; font-family: 'Exo 2', sans-serif;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-edit { background: rgba(0,212,255,0.08); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+  .btn-edit:hover { background: rgba(0,212,255,0.2); }
+  .btn-del  { background: rgba(255,45,120,0.08); color: var(--accent2); border-color: rgba(255,45,120,0.3); margin-left: 6px; }
+  .btn-del:hover  { background: rgba(255,45,120,0.2); }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+    z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #021224; border: 1px solid var(--border-glow);
+    border-radius: 12px; padding: 32px; width: 100%; max-width: 600px;
+    max-height: 90vh; overflow-y: auto; position: relative;
+    animation: fadeUp 0.3s ease;
+  }
+  .modal::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan), var(--cyan2));
+  }
+  .modal-title {
+    font-family: 'Orbitron', monospace; font-size: 0.8rem; letter-spacing: 3px;
+    color: var(--cyan); text-transform: uppercase; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-close {
+    background: none; border: none; color: var(--text-dim); font-size: 1.3rem;
+    cursor: pointer; line-height: 1; padding: 0 4px;
+  }
+  .modal-close:hover { color: var(--accent2); }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal-group { display: flex; flex-direction: column; gap: 6px; }
+  .modal-group.full { grid-column: 1 / -1; }
+  .modal-group label { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+  .modal-group input, .modal-group select, .modal-group textarea {
+    background: rgba(0,212,255,0.04); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: 'Exo 2', sans-serif;
+    font-size: 0.88rem; padding: 9px 13px; outline: none; transition: border-color 0.2s;
+  }
+  .modal-group input:focus, .modal-group select:focus, .modal-group textarea:focus { border-color: var(--cyan); }
+  .modal-group select option { background: #021224; }
+  .modal-group textarea { resize: vertical; min-height: 70px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+  .btn-save {
+    padding: 10px 28px; background: linear-gradient(90deg, var(--accent), var(--cyan));
+    border: none; border-radius: 6px; color: #fff;
+    font-family: 'Orbitron', monospace; font-size: 0.72rem; letter-spacing: 2px;
+    cursor: pointer; transition: transform 0.2s, opacity 0.2s;
+  }
+  .btn-save:hover { transform: translateY(-1px); opacity: 0.9; }
+  .btn-cancel {
+    padding: 10px 20px; background: transparent; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text-dim); font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem; cursor: pointer; transition: border-color 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--border-glow); color: var(--text); }
+
+  /* CONFIRM DELETE */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+    z-index: 1100; align-items: center; justify-content: center;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: #021224; border: 1px solid rgba(255,45,120,0.5);
+    border-radius: 12px; padding: 32px; width: 100%; max-width: 420px;
+    text-align: center; animation: fadeUp 0.3s ease;
+  }
+  .confirm-box h3 { font-family: 'Orbitron', monospace; font-size: 0.9rem; color: var(--accent2); margin-bottom: 12px; }
+  .confirm-box p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6; }
+  .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+  .btn-confirm-del {
+    padding: 10px 24px; background: var(--accent2); border: none;
+    border-radius: 6px; color: #fff; font-family: 'Orbitron', monospace;
+    font-size: 0.72rem; letter-spacing: 2px; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -226,10 +312,122 @@
 
   <!-- TABLE -->
   <div class="table-card">
-    <div class="chart-title">Últimas Respostas</div>
+    <div class="chart-title" style="justify-content:space-between">
+      <span>Todas as Respostas</span>
+      <span id="tableCount" style="font-size:0.7rem;color:var(--text-dim)"></span>
+    </div>
     <div id="tableContainer"></div>
   </div>
 
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-title">
+      <span>✦ Editar Resposta</span>
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-group">
+        <label>Nome</label>
+        <input type="text" id="eNome">
+      </div>
+      <div class="modal-group">
+        <label>Setor</label>
+        <select id="eSetor">
+          <option value="">Selecione...</option>
+          <option>Administrativo</option><option>Comercial</option>
+          <option>Financeiro</option><option>Operações</option>
+          <option>RH</option><option>Marketing</option>
+          <option>Jurídico</option><option>Diretoria</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>Tipo de Chamado</label>
+        <select id="eChamado">
+          <option value="">Selecione...</option>
+          <option>🖥️ Problema de Hardware</option>
+          <option>💻 Problema de Software</option>
+          <option>🌐 Conectividade / Rede</option>
+          <option>🔒 Acesso e Senhas</option>
+          <option>📧 E-mail e Comunicação</option>
+          <option>🖨️ Impressão e Periféricos</option>
+          <option>☁️ Cloud / Sistemas</option>
+          <option>🔧 Manutenção Preventiva</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>Tempo de Resposta (1-5)</label>
+        <select id="eTempo">
+          <option value="">—</option>
+          <option value="1">1 · Muito Lento</option>
+          <option value="2">2 · Lento</option>
+          <option value="3">3 · Regular</option>
+          <option value="4">4 · Rápido</option>
+          <option value="5">5 · Excelente</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>Qualidade (1-5 estrelas)</label>
+        <select id="eQuality">
+          <option value="">—</option>
+          <option value="1">★ (1)</option>
+          <option value="2">★★ (2)</option>
+          <option value="3">★★★ (3)</option>
+          <option value="4">★★★★ (4)</option>
+          <option value="5">★★★★★ (5)</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>NPS (0-10)</label>
+        <select id="eNps">
+          <option value="">—</option>
+          <option>0</option><option>1</option><option>2</option>
+          <option>3</option><option>4</option><option>5</option>
+          <option>6</option><option>7</option><option>8</option>
+          <option>9</option><option>10</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>Conhecimento Técnico</label>
+        <select id="eKnowledge">
+          <option value="">—</option>
+          <option value="sim">✅ Sim</option>
+          <option value="parcial">⚡ Parcialmente</option>
+          <option value="nao">❌ Não</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <label>Deseja Contato</label>
+        <select id="eContato">
+          <option value="">—</option>
+          <option value="sim">📬 Sim</option>
+          <option value="nao">🔕 Não</option>
+        </select>
+      </div>
+      <div class="modal-group full">
+        <label>Comentário</label>
+        <textarea id="eComentario"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEdit()">Cancelar</button>
+      <button class="btn-save" onclick="saveEdit()">⟶ &nbsp;Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>⚠ Confirmar Exclusão</h3>
+    <p>Tem certeza que deseja excluir esta resposta?<br>Esta ação não pode ser desfeita.</p>
+    <div class="confirm-actions">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">Excluir</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -240,6 +438,9 @@
   const TEMPOS = {1:'Muito Lento',2:'Lento',3:'Regular',4:'Rápido',5:'Excelente'};
 
   let charts = {};
+  let allData = [];
+  let editIndex = -1;
+  let deleteIndex = -1;
 
   function setStatus(state, text) {
     const dot = document.getElementById('statusDot');
@@ -262,10 +463,7 @@
     const ctx = document.getElementById(id);
     charts[id] = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels,
-        datasets: [{ data, backgroundColor: color || COLORS[0], borderRadius: 4, borderSkipped: false }]
-      },
+      data: { labels, datasets: [{ data, backgroundColor: color || COLORS[0], borderRadius: 4, borderSkipped: false }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
@@ -282,13 +480,7 @@
     const ctx = document.getElementById(id);
     charts[id] = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)',
-          pointBackgroundColor: '#00d4ff', pointRadius: 4, tension: 0.3, fill: true
-        }]
-      },
+      data: { labels, datasets: [{ data, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', pointBackgroundColor: '#00d4ff', pointRadius: 4, tension: 0.3, fill: true }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
@@ -308,51 +500,154 @@
     }, {});
   }
 
-  function npsLabel(v) {
-    const n = parseInt(v);
-    if (n >= 9) return 'Promotor';
-    if (n >= 7) return 'Neutro';
-    return 'Detrator';
+  // ── EDIT ─────────────────────────────────────
+  function openEdit(realIndex) {
+    editIndex = realIndex;
+    const r = allData[realIndex];
+    document.getElementById('eNome').value        = r.nome || '';
+    document.getElementById('eSetor').value       = r.setor || '';
+    document.getElementById('eChamado').value     = r.chamado || '';
+    document.getElementById('eTempo').value       = r.tempo_resp || '';
+    document.getElementById('eQuality').value     = r.qualidade || '';
+    document.getElementById('eNps').value         = r.nps !== null && r.nps !== undefined ? r.nps : '';
+    document.getElementById('eKnowledge').value   = r.conhecimento || '';
+    document.getElementById('eContato').value     = r.contato || '';
+    document.getElementById('eComentario').value  = r.comentario || '';
+    document.getElementById('editOverlay').classList.add('open');
   }
 
-  function npsColor(v) {
-    const n = parseInt(v);
-    if (n >= 9) return '#00e676';
-    if (n >= 7) return '#ffd600';
-    return '#ff2d78';
+  function closeEdit() {
+    document.getElementById('editOverlay').classList.remove('open');
+    editIndex = -1;
   }
 
+  async function saveEdit() {
+    if (editIndex < 0) return;
+    allData[editIndex] = {
+      ...allData[editIndex],
+      nome        : document.getElementById('eNome').value,
+      setor       : document.getElementById('eSetor').value,
+      chamado     : document.getElementById('eChamado').value,
+      tempo_resp  : document.getElementById('eTempo').value,
+      qualidade   : document.getElementById('eQuality').value,
+      nps         : document.getElementById('eNps').value,
+      conhecimento: document.getElementById('eKnowledge').value,
+      contato     : document.getElementById('eContato').value,
+      comentario  : document.getElementById('eComentario').value,
+    };
+    closeEdit();
+    await saveAll('Resposta editada com sucesso!');
+  }
+
+  // ── DELETE ───────────────────────────────────
+  function openDelete(realIndex) {
+    deleteIndex = realIndex;
+    document.getElementById('confirmOverlay').classList.add('open');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirmOverlay').classList.remove('open');
+    deleteIndex = -1;
+  }
+
+  async function confirmDelete() {
+    if (deleteIndex < 0) return;
+    allData.splice(deleteIndex, 1);
+    closeConfirm();
+    await saveAll('Resposta excluída com sucesso!');
+  }
+
+  // ── SAVE TO JSONBIN ──────────────────────────
+  async function saveAll(successMsg) {
+    setStatus('loading', 'Salvando alterações...');
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+        body: JSON.stringify(allData)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      setStatus('ok', successMsg + ' · ' + new Date().toLocaleTimeString('pt-BR'));
+      renderAll(allData);
+    } catch (err) {
+      setStatus('error', 'Erro ao salvar: ' + err.message);
+    }
+  }
+
+  // ── RENDER TABLE ─────────────────────────────
   function renderTable(data) {
     const container = document.getElementById('tableContainer');
+    document.getElementById('tableCount').textContent = data.length + ' registro(s)';
+
     if (!data.length) {
       container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Nenhuma resposta registrada ainda</p></div>';
       return;
     }
-    const recent = [...data].reverse().slice(0, 20);
-    const rows = recent.map(r => {
+
+    const rows = [...data].map((r, displayIdx) => {
+      const realIndex = allData.indexOf(r);
       const q = parseInt(r.qualidade) || 0;
       const stars = '★'.repeat(q) + '☆'.repeat(5 - q);
-      const npsVal = r.nps !== null && r.nps !== undefined ? r.nps : '—';
+      const npsVal = r.nps !== null && r.nps !== undefined && r.nps !== '' ? r.nps : '—';
       const npsClass = r.nps >= 9 ? 'badge-green' : r.nps >= 7 ? 'badge-yellow' : 'badge-red';
       return `<tr>
-        <td>${r.data_hora || '—'}</td>
+        <td style="font-size:0.75rem;white-space:nowrap">${r.data_hora || '—'}</td>
         <td>${r.nome || '—'}</td>
         <td>${r.setor || '—'}</td>
-        <td style="font-size:0.75rem">${(r.chamado || '—').replace(/^[^\s]+ /,'')}</td>
-        <td><span class="stars-display" style="font-size:0.9rem">${stars}</span></td>
+        <td style="font-size:0.75rem">${(r.chamado || '—').replace(/^[^\s]+ /,'').substring(0,20)}</td>
+        <td><span class="stars-display" style="font-size:0.85rem">${stars}</span></td>
         <td><span class="badge ${npsClass}">${npsVal}</span></td>
-        <td style="color:var(--text-dim);font-size:0.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.comentario || '—'}</td>
+        <td style="color:var(--text-dim);font-size:0.75rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.comentario || '—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn-edit" onclick="openEdit(${realIndex})">✏ Editar</button>
+          <button class="btn-del"  onclick="openDelete(${realIndex})">✕ Excluir</button>
+        </td>
       </tr>`;
-    }).join('');
+    }).reverse().join('');
 
     container.innerHTML = `<table>
       <thead><tr>
-        <th>Data/Hora</th><th>Nome</th><th>Setor</th><th>Chamado</th><th>Qualidade</th><th>NPS</th><th>Comentário</th>
+        <th>Data/Hora</th><th>Nome</th><th>Setor</th><th>Chamado</th>
+        <th>Qualidade</th><th>NPS</th><th>Comentário</th><th>Ações</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
   }
 
+  // ── RENDER CHARTS + TABLE ────────────────────
+  function renderAll(data) {
+    document.getElementById('kpiTotal').textContent = data.length;
+    document.getElementById('kpiNps').textContent = avg(data.map(r => r.nps));
+    document.getElementById('kpiQuality').textContent = avg(data.map(r => r.qualidade));
+    const tempoAvg = avg(data.map(r => r.tempo_resp));
+    document.getElementById('kpiTempo').textContent = tempoAvg !== '—' ? TEMPOS[Math.round(tempoAvg)] || tempoAvg : '—';
+
+    if (!data.length) {
+      ['chartNps','chartQuality','chartSetor','chartChamado','chartTempo'].forEach(id => destroyChart(id));
+      renderTable([]);
+      return;
+    }
+
+    makeLineChart('chartNps', data.map((_, i) => '#' + (i + 1)), data.map(r => r.nps !== null ? parseInt(r.nps) : null));
+
+    const qDist = {1:0,2:0,3:0,4:0,5:0};
+    data.forEach(r => { if (r.qualidade) qDist[r.qualidade] = (qDist[r.qualidade]||0)+1; });
+    makeBarChart('chartQuality', ['1★','2★','3★','4★','5★'], Object.values(qDist), ['#ff2d78','#ff9100','#ffd600','#00f5d4','#00e676']);
+
+    const setorCount = countBy(data, 'setor');
+    makeBarChart('chartSetor', Object.keys(setorCount), Object.values(setorCount), COLORS.slice(0, Object.keys(setorCount).length));
+
+    const chamCount = countBy(data, 'chamado');
+    makeBarChart('chartChamado', Object.keys(chamCount).map(k => k.replace(/^[^\s]+ /,'').substring(0,18)), Object.values(chamCount), '#7b2fff');
+
+    const tempoDist = {1:0,2:0,3:0,4:0,5:0};
+    data.forEach(r => { if (r.tempo_resp) tempoDist[r.tempo_resp] = (tempoDist[r.tempo_resp]||0)+1; });
+    makeBarChart('chartTempo', Object.values(TEMPOS), Object.values(tempoDist), ['#ff2d78','#ff9100','#ffd600','#00f5d4','#00e676']);
+
+    renderTable(data);
+  }
+
+  // ── LOAD DATA ────────────────────────────────
   async function loadData() {
     setStatus('loading', 'Carregando dados...');
     try {
@@ -361,59 +656,17 @@
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
-      const data = Array.isArray(json.record) ? json.record : [];
-
-      setStatus('ok', `${data.length} resposta(s) carregada(s) · Atualizado em ${new Date().toLocaleTimeString('pt-BR')}`);
-
-      // KPIs
-      document.getElementById('kpiTotal').textContent = data.length;
-      document.getElementById('kpiNps').textContent = avg(data.map(r => r.nps));
-      document.getElementById('kpiQuality').textContent = avg(data.map(r => r.qualidade));
-      const tempoAvg = avg(data.map(r => r.tempo_resp));
-      document.getElementById('kpiTempo').textContent = tempoAvg !== '—' ? TEMPOS[Math.round(tempoAvg)] || tempoAvg : '—';
-
-      if (!data.length) {
-        ['chartNps','chartQuality','chartSetor','chartChamado','chartTempo'].forEach(id => {
-          destroyChart(id);
-          const ctx = document.getElementById(id);
-          const chart2d = ctx.getContext('2d');
-          chart2d.clearRect(0,0,ctx.width,ctx.height);
-        });
-        renderTable([]);
-        return;
-      }
-
-      // NPS line
-      const npsLabels = data.map((_, i) => '#' + (i + 1));
-      const npsVals   = data.map(r => r.nps !== null ? parseInt(r.nps) : null);
-      makeLineChart('chartNps', npsLabels, npsVals);
-
-      // Quality bar
-      const qDist = {1:0,2:0,3:0,4:0,5:0};
-      data.forEach(r => { if (r.qualidade) qDist[r.qualidade] = (qDist[r.qualidade]||0)+1; });
-      makeBarChart('chartQuality', ['1★','2★','3★','4★','5★'], Object.values(qDist), ['#ff2d78','#ff9100','#ffd600','#00f5d4','#00e676']);
-
-      // Setor
-      const setorCount = countBy(data, 'setor');
-      makeBarChart('chartSetor', Object.keys(setorCount), Object.values(setorCount), COLORS.slice(0, Object.keys(setorCount).length));
-
-      // Chamado (clean emoji)
-      const chamCount = countBy(data, 'chamado');
-      const chamLabels = Object.keys(chamCount).map(k => k.replace(/^[^\s]+ /,'').substring(0,18));
-      makeBarChart('chartChamado', chamLabels, Object.values(chamCount), '#7b2fff');
-
-      // Tempo
-      const tempoDist = {1:0,2:0,3:0,4:0,5:0};
-      data.forEach(r => { if (r.tempo_resp) tempoDist[r.tempo_resp] = (tempoDist[r.tempo_resp]||0)+1; });
-      makeBarChart('chartTempo', Object.values(TEMPOS), Object.values(tempoDist), ['#ff2d78','#ff9100','#ffd600','#00f5d4','#00e676']);
-
-      renderTable(data);
-
+      allData = Array.isArray(json.record) ? json.record : [];
+      setStatus('ok', `${allData.length} resposta(s) carregada(s) · Atualizado em ${new Date().toLocaleTimeString('pt-BR')}`);
+      renderAll(allData);
     } catch (err) {
       setStatus('error', 'Erro ao carregar dados: ' + err.message);
-      console.error(err);
     }
   }
+
+  // Close modals on overlay click
+  document.getElementById('editOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEdit(); });
+  document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
 
   loadData();
   setInterval(loadData, 60000);
