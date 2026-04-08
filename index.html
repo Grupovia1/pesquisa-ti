@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisa de Satisfação · TI Support</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020b18;
+    --surface: rgba(0,212,255,0.04);
+    --border: rgba(0,212,255,0.18);
+    --border-glow: rgba(0,212,255,0.5);
+    --cyan: #00d4ff;
+    --cyan2: #00f5d4;
+    --accent: #7b2fff;
+    --accent2: #ff2d78;
+    --text: #cce8f4;
+    --text-dim: #5a8fa8;
+    --card: rgba(2,18,36,0.85);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Exo 2', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+  }
+
+  /* ── ANIMATED ORBS ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    animation: drift 12s ease-in-out infinite alternate;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .orb-1 { width: 500px; height: 500px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
+  .orb-2 { width: 400px; height: 400px; background: var(--cyan); bottom: -100px; right: -50px; animation-delay: -5s; }
+  .orb-3 { width: 300px; height: 300px; background: var(--accent2); top: 40%; left: 55%; animation-delay: -8s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,40px) scale(1.1); } }
+
+  /* ── SCAN LINE ── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    animation: scan 4s linear infinite;
+    opacity: 0.4;
+    z-index: 999;
+  }
+  @keyframes scan { from { top: 0; } to { top: 100vh; } }
+
+  /* ── WRAPPER ── */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+    animation: fadeDown 0.8s ease both;
+  }
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-30px); } to { opacity:1; transform:translateY(0); } }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .logo-icon {
+    width: 64px; height: 64px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .logo-icon svg { width: 100%; height: 100%; }
+
+  .grupovia1-logo {
+    display: block;
+    height: 72px;
+    width: auto;
+    margin: 0 auto 18px;
+    border-radius: 10px;
+    box-shadow: 0 0 24px rgba(0,212,255,0.25);
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 4px;
+    color: var(--cyan);
+    background: rgba(0,212,255,0.08);
+    border: 1px solid var(--border);
+    padding: 4px 14px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    font-weight: 900;
+    line-height: 1.15;
+    background: linear-gradient(135deg, #fff 30%, var(--cyan) 70%, var(--cyan2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    font-weight: 300;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── ILLUSTRATION STRIP ── */
+  .illustration-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  .illus-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    padding: 20px 12px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .illus-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,212,255,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .illus-card:hover { border-color: var(--border-glow); transform: translateY(-4px); }
+  .illus-card:hover::before { opacity: 1; }
+  .illus-card svg { width: 42px; height: 42px; margin-bottom: 8px; }
+  .illus-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ── FORM CARD ── */
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 36px;
+    backdrop-filter: blur(20px);
+    animation: fadeUp 0.8s 0.4s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .form-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan), var(--cyan2));
+  }
+
+  /* ── SECTION ── */
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: block;
+    width: 8px; height: 8px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--cyan);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  .form-group {
+    margin-bottom: 28px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+  }
+  label span.req { color: var(--accent2); margin-left: 4px; }
+
+  /* ── INPUTS ── */
+  input[type="text"], input[type="email"], select, textarea {
+    width: 100%;
+    background: rgba(0,212,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.93rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    appearance: none;
+  }
+  input[type="text"]:focus, input[type="email"]:focus, select:focus, textarea:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.12), inset 0 0 20px rgba(0,212,255,0.03);
+  }
+  select option { background: #021224; }
+  textarea { resize: vertical; min-height: 100px; }
+  ::placeholder { color: var(--text-dim); }
+
+  /* ── STAR RATING ── */
+  .stars {
+    display: flex;
+    gap: 8px;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+  .stars input { display: none; }
+  .stars label {
+    font-size: 2rem;
+    cursor: pointer;
+    color: rgba(255,255,255,0.12);
+    transition: color 0.2s, transform 0.2s, text-shadow 0.2s;
+    margin: 0;
+    letter-spacing: 0;
+  }
+  .stars label:hover,
+  .stars label:hover ~ label,
+  .stars input:checked ~ label {
+    color: var(--cyan);
+    text-shadow: 0 0 14px var(--cyan);
+    transform: scale(1.15);
+  }
+
+  /* ── EMOJI RATING ── */
+  .emoji-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .emoji-group input[type="radio"] { display: none; }
+  .emoji-group label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    transition: all 0.25s;
+    min-width: 72px;
+    letter-spacing: 0;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin: 0;
+  }
+  .emoji-group label .em { font-size: 1.8rem; }
+  .emoji-group input[type="radio"]:checked + label,
+  .emoji-group label:hover {
+    border-color: var(--cyan);
+    background: rgba(0,212,255,0.08);
+    color: var(--cyan);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 24px rgba(0,212,255,0.15);
+  }
+
+  /* ── CHECKBOX / RADIO LIST ── */
+  .check-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 11px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .check-item:hover { border-color: var(--border-glow); background: rgba(0,212,255,0.05); }
+  .check-item input { display: none; }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border-glow);
+    border-radius: 3px;
+    flex-shrink: 0;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .check-box::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 5px;
+    width: 5px; height: 9px;
+    border: 2px solid #000;
+    border-top: none; border-left: none;
+    transform: rotate(45deg);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .check-item input:checked ~ .check-box { background: var(--cyan); border-color: var(--cyan); }
+  .check-item input:checked ~ .check-box::after { opacity: 1; }
+  .check-label { font-size: 0.88rem; color: var(--text); }
+
+  /* ── TWO COL ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } .illustration-strip { grid-template-columns: repeat(2,1fr); } }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 36px 0; }
+
+  /* ── NPS SLIDER ── */
+  .nps-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .nps-row input[type="radio"] { display: none; }
+  .nps-row label {
+    width: 52px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 0; letter-spacing: 0;
+    color: var(--text-dim);
+  }
+  .nps-row label:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.08); }
+  .nps-row input[type="radio"]:checked + label {
+    background: var(--cyan); color: #000; border-color: var(--cyan);
+    font-weight: 700; box-shadow: 0 0 16px rgba(0,212,255,0.4);
+  }
+  .nps-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.3s;
+    margin-top: 12px;
+  }
+  .btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 200%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s;
+  }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,212,255,0.35); }
+  .btn-submit:hover::before { left: 100%; }
+  .btn-submit:active { transform: translateY(0); }
+
+  /* ── SUCCESS ── */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    animation: fadeUp 0.6s ease;
+  }
+  .success-screen.show { display: block; }
+  .success-icon { font-size: 4rem; margin-bottom: 20px; animation: pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+  .success-screen h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 12px;
+  }
+  .success-screen p { color: var(--text-dim); font-size: 0.95rem; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    font-family: 'Orbitron', monospace;
+  }
+  footer span { color: var(--cyan); }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-area">
+      <!-- Shield / IT icon -->
+      <div class="logo-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#00d4ff"/>
+              <stop offset="1" stop-color="#7b2fff"/>
+            </linearGradient>
+          </defs>
+          <path d="M32 4L8 14v18c0 14 10.7 27.1 24 30 13.3-2.9 24-16 24-30V14L32 4z" stroke="url(#lg1)" stroke-width="2" fill="rgba(0,212,255,0.05)"/>
+          <rect x="22" y="24" width="20" height="14" rx="2" stroke="url(#lg1)" stroke-width="1.5"/>
+          <circle cx="32" cy="29" r="3" fill="url(#lg1)" opacity="0.8"/>
+          <line x1="27" y1="38" x2="37" y2="38" stroke="url(#lg1)" stroke-width="1.5"/>
+          <line x1="32" y1="38" x2="32" y2="44" stroke="url(#lg1)" stroke-width="1.5"/>
+          <rect x="27" y="44" width="10" height="2" rx="1" fill="url(#lg1)" opacity="0.6"/>
+          <circle cx="32" cy="32" r="28" stroke="url(#lg1)" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+    <img class="grupovia1-logo" src="data:image/png;base64,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" alt="Grupo Via1">
+    <div class="badge">Departamento de TI · Suporte &amp; Infraestrutura</div>
+    <h1>Pesquisa de<br>Satisfação</h1>
+    <p class="subtitle">Sua opinião é o nosso sistema de atualização. Avalie o atendimento e ajude-nos a elevar o nível do suporte técnico.</p>
+  </header>
+
+  <!-- ILLUSTRATION STRIP -->
+  <div class="illustration-strip">
+    <!-- Card 1: Server -->
+    <div class="illus-card">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="10" width="36" height="9" rx="2" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.06)"/>
+        <rect x="6" y="22" width="36" height="9" rx="2" stroke="#7b2fff" stroke-width="1.5" fill="rgba(123,47,255,0.06)"/>
+        <rect x="6" y="34" width="36" height="9" rx="2" stroke="#00f5d4" stroke-width="1.5" fill="rgba(0,245,212,0.06)"/>
+        <circle cx="38" cy="14.5" r="2" fill="#00d4ff" opacity="0.9"/>
+        <circle cx="38" cy="26.5" r="2" fill="#7b2fff" opacity="0.9"/>
+        <circle cx="38" cy="38.5" r="2" fill="#00f5d4" opacity="0.9"/>
+        <rect x="10" y="13" width="12" height="3" rx="1.5" fill="rgba(0,212,255,0.3)"/>
+        <rect x="10" y="25" width="8" height="3" rx="1.5" fill="rgba(123,47,255,0.3)"/>
+        <rect x="10" y="37" width="14" height="3" rx="1.5" fill="rgba(0,245,212,0.3)"/>
+      </svg>
+      <div class="illus-label">Servidor</div>
+    </div>
+    <!-- Card 2: Network -->
+    <div class="illus-card">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="10" r="5" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.08)"/>
+        <circle cx="10" cy="36" r="4" stroke="#7b2fff" stroke-width="1.5" fill="rgba(123,47,255,0.08)"/>
+        <circle cx="38" cy="36" r="4" stroke="#00f5d4" stroke-width="1.5" fill="rgba(0,245,212,0.08)"/>
+        <line x1="24" y1="15" x2="14" y2="32" stroke="#00d4ff" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
+        <line x1="24" y1="15" x2="34" y2="32" stroke="#00d4ff" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
+        <line x1="14" y1="36" x2="34" y2="36" stroke="#7b2fff" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
+        <circle cx="24" cy="10" r="2" fill="#00d4ff" opacity="0.8"/>
+      </svg>
+      <div class="illus-label">Rede</div>
+    </div>
+    <!-- Card 3: Code -->
+    <div class="illus-card">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="8" width="36" height="32" rx="3" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.04)"/>
+        <rect x="6" y="8" width="36" height="8" rx="3" fill="rgba(0,212,255,0.08)"/>
+        <circle cx="12" cy="12" r="1.5" fill="#ff2d78"/>
+        <circle cx="18" cy="12" r="1.5" fill="#ffd600"/>
+        <circle cx="24" cy="12" r="1.5" fill="#00f5d4"/>
+        <path d="M14 24l-5 4 5 4" stroke="#7b2fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M34 24l5 4-5 4" stroke="#7b2fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="22" y1="20" x2="26" y2="36" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+      </svg>
+      <div class="illus-label">Sistema</div>
+    </div>
+    <!-- Card 4: Support -->
+    <div class="illus-card">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="20" r="9" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.06)"/>
+        <path d="M10 40c0-7.7 6.3-14 14-14s14 6.3 14 14" stroke="#00f5d4" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="24" cy="20" r="4" fill="rgba(0,212,255,0.2)" stroke="#00d4ff" stroke-width="1"/>
+        <path d="M30 14l6-4" stroke="#7b2fff" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="37" cy="9" r="4" stroke="#7b2fff" stroke-width="1.5" fill="rgba(123,47,255,0.1)"/>
+        <path d="M35 9h4M37 7v4" stroke="#7b2fff" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      <div class="illus-label">Suporte</div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-card" id="formCard">
+    <form id="surveyForm">
+
+      <!-- SECTION 1: Identification -->
+      <div class="section-title">Identificação</div>
+      <div class="two-col">
+        <div class="form-group">
+          <label>Nome Completo <span class="req">*</span></label>
+          <input type="text" placeholder="Seu nome" required>
+        </div>
+        <div class="form-group">
+          <label>Setor / Departamento</label>
+          <select>
+            <option value="">Selecione...</option>
+            <option>Administrativo</option>
+            <option>Comercial</option>
+            <option>Financeiro</option>
+            <option>Operações</option>
+            <option>RH</option>
+            <option>Marketing</option>
+            <option>Jurídico</option>
+            <option>Diretoria</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SECTION 2: Atendimento -->
+      <div class="section-title">Avaliação do Atendimento</div>
+
+      <div class="form-group">
+        <label>Tipo de Chamado <span class="req">*</span></label>
+        <select required>
+          <option value="">Selecione o tipo...</option>
+          <option>🖥️ Problema de Hardware</option>
+          <option>💻 Problema de Software</option>
+          <option>🌐 Conectividade / Rede</option>
+          <option>🔒 Acesso e Senhas</option>
+          <option>📧 E-mail e Comunicação</option>
+          <option>🖨️ Impressão e Periféricos</option>
+          <option>☁️ Cloud / Sistemas</option>
+          <option>🔧 Manutenção Preventiva</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Como você avalia o <strong style="color:var(--cyan)">tempo de resposta</strong> do chamado? <span class="req">*</span></label>
+        <div class="emoji-group">
+          <input type="radio" name="tempo" id="t1" value="1"><label for="t1"><span class="em">😤</span>Muito Lento</label>
+          <input type="radio" name="tempo" id="t2" value="2"><label for="t2"><span class="em">😕</span>Lento</label>
+          <input type="radio" name="tempo" id="t3" value="3"><label for="t3"><span class="em">😐</span>Regular</label>
+          <input type="radio" name="tempo" id="t4" value="4"><label for="t4"><span class="em">😊</span>Rápido</label>
+          <input type="radio" name="tempo" id="t5" value="5"><label for="t5"><span class="em">🚀</span>Excelente</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Avalie a <strong style="color:var(--cyan)">qualidade da solução</strong> apresentada: <span class="req">*</span></label>
+        <div class="stars">
+          <input type="radio" id="s5" name="quality" value="5"><label for="s5" title="Excelente">★</label>
+          <input type="radio" id="s4" name="quality" value="4"><label for="s4" title="Ótimo">★</label>
+          <input type="radio" id="s3" name="quality" value="3"><label for="s3" title="Bom">★</label>
+          <input type="radio" id="s2" name="quality" value="2"><label for="s2" title="Regular">★</label>
+          <input type="radio" id="s1" name="quality" value="1"><label for="s1" title="Ruim">★</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>O técnico demonstrou <strong style="color:var(--cyan)">conhecimento técnico</strong> adequado?</label>
+        <div class="check-list">
+          <label class="check-item">
+            <input type="radio" name="knowledge" value="sim">
+            <div class="check-box"></div>
+            <span class="check-label">✅ Sim, resolveu com segurança e clareza</span>
+          </label>
+          <label class="check-item">
+            <input type="radio" name="knowledge" value="parcial">
+            <div class="check-box"></div>
+            <span class="check-label">⚡ Parcialmente, precisou de suporte adicional</span>
+          </label>
+          <label class="check-item">
+            <input type="radio" name="knowledge" value="nao">
+            <div class="check-box"></div>
+            <span class="check-label">❌ Não, o problema não foi resolvido corretamente</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SECTION 3: Canais -->
+      <div class="section-title">Canal &amp; Comunicação</div>
+
+      <div class="form-group">
+        <label>Como foi feito o atendimento?</label>
+        <div class="check-list">
+          <label class="check-item">
+            <input type="checkbox" name="canal" value="presencial">
+            <div class="check-box"></div>
+            <span class="check-label">🖥️ Presencial (in loco)</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="canal" value="remoto">
+            <div class="check-box"></div>
+            <span class="check-label">📡 Acesso Remoto</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="canal" value="telefone">
+            <div class="check-box"></div>
+            <span class="check-label">📞 Telefone / Ramal</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="canal" value="chat">
+            <div class="check-box"></div>
+            <span class="check-label">💬 Chat / Ticket (Sistema de Chamados)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SECTION 4: NPS -->
+      <div class="section-title">Indicação &amp; NPS</div>
+
+      <div class="form-group">
+        <label>Em uma escala de <strong style="color:var(--cyan)">0 a 10</strong>, qual a probabilidade de você recomendar o suporte de TI a um colega?</label>
+        <div class="nps-row">
+          <input type="radio" id="n0" name="nps" value="0"><label for="n0">0</label>
+          <input type="radio" id="n1" name="nps" value="1"><label for="n1">1</label>
+          <input type="radio" id="n2" name="nps" value="2"><label for="n2">2</label>
+          <input type="radio" id="n3" name="nps" value="3"><label for="n3">3</label>
+          <input type="radio" id="n4" name="nps" value="4"><label for="n4">4</label>
+          <input type="radio" id="n5" name="nps" value="5"><label for="n5">5</label>
+          <input type="radio" id="n6" name="nps" value="6"><label for="n6">6</label>
+          <input type="radio" id="n7" name="nps" value="7"><label for="n7">7</label>
+          <input type="radio" id="n8" name="nps" value="8"><label for="n8">8</label>
+          <input type="radio" id="n9" name="nps" value="9"><label for="n9">9</label>
+          <input type="radio" id="n10" name="nps" value="10"><label for="n10">10</label>
+        </div>
+        <div class="nps-labels"><span>Não recomendaria</span><span>Recomendaria com certeza</span></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SECTION 5: Comentários -->
+      <div class="section-title">Comentários &amp; Sugestões</div>
+
+      <div class="form-group">
+        <label>O que podemos melhorar? Deixe seu feedback livre:</label>
+        <textarea placeholder="Compartilhe sua experiência, sugestões ou elogios. Cada comentário é um dado valioso para aprimorar nosso sistema de suporte..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Deseja ser contactado para acompanhamento?</label>
+        <div class="check-list">
+          <label class="check-item">
+            <input type="radio" name="contact" value="sim">
+            <div class="check-box"></div>
+            <span class="check-label">📬 Sim, gostaria de um retorno sobre meu feedback</span>
+          </label>
+          <label class="check-item">
+            <input type="radio" name="contact" value="nao">
+            <div class="check-box"></div>
+            <span class="check-label">🔕 Não, prefiro permanecer anônimo</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnSubmit">
+        <span id="btnText">⟶ &nbsp; Transmitir Avaliação</span>
+        <span id="btnLoading" style="display:none">⟳ &nbsp; Enviando...</span>
+      </button>
+
+      <div id="errorMsg" style="display:none; margin-top:14px; padding:12px 16px; border:1px solid var(--accent2); border-radius:6px; color:var(--accent2); font-size:0.85rem; text-align:center;"></div>
+    </form>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">✦</div>
+      <h2>Avaliação Registrada!</h2>
+      <p>Seu feedback foi enviado com sucesso.<br>Obrigado por contribuir com a evolução do nosso suporte de TI.</p>
+      <p style="margin-top:18px; font-size:0.78rem; color:var(--text-dim); font-family:'Orbitron',monospace; letter-spacing:1px;" id="recordId"></p>
+    </div>
+  </div>
+
+  <footer>
+    <span>GRUPO VIA1</span> · Sistema de Pesquisa de Satisfação TI · v2.0.26
+  </footer>
+
+</div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // JSONBin.io — armazenamento gratuito de JSON
+  // Crie sua conta grátis em: https://jsonbin.io
+  // e substitua as variáveis abaixo:
+  // ─────────────────────────────────────────────
+  const JSONBIN_API_KEY  = '$2a$10$3/3x/RwD6EBTZ4X2eQFyNOhON0b8M88NwR.Hs9PAH4IDNUPjOiKim';
+  const JSONBIN_BIN_ID   = '69d6a9f336566621a890a202';
+
+  // ── HELPERS ──────────────────────────────────
+  function getRadio(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : null;
+  }
+  function getCheckboxes(name) {
+    return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
+  }
+
+  // ── SUBMIT ───────────────────────────────────
+  document.getElementById('surveyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn      = document.getElementById('btnSubmit');
+    const btnText  = document.getElementById('btnText');
+    const btnLoad  = document.getElementById('btnLoading');
+    const errMsg   = document.getElementById('errorMsg');
+
+    // Coleta dos dados
+    const payload = {
+      data_hora  : new Date().toLocaleString('pt-BR'),
+      nome       : document.querySelector('input[type="text"]').value,
+      setor      : document.querySelector('select').value,
+      chamado    : document.querySelectorAll('select')[1]?.value || '',
+      tempo_resp : getRadio('tempo'),
+      qualidade  : getRadio('quality'),
+      conhecimento: getRadio('knowledge'),
+      canais     : getCheckboxes('canal'),
+      nps        : getRadio('nps'),
+      comentario : document.querySelector('textarea').value,
+      contato    : getRadio('contact'),
+    };
+
+    // Loading state
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoad.style.display = 'inline';
+    errMsg.style.display  = 'none';
+
+    try {
+      // ── Busca registros existentes ──
+      const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+        headers: { 'X-Master-Key': JSONBIN_API_KEY }
+      });
+
+      let respostas = [];
+      if (getRes.ok) {
+        const getData = await getRes.json();
+        respostas = Array.isArray(getData.record) ? getData.record : [];
+      }
+
+      respostas.push(payload);
+
+      // ── Salva atualizado ──
+      const putRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+        method : 'PUT',
+        headers: {
+          'Content-Type' : 'application/json',
+          'X-Master-Key' : JSONBIN_API_KEY,
+        },
+        body: JSON.stringify(respostas)
+      });
+
+      if (!putRes.ok) throw new Error(`Erro HTTP ${putRes.status}`);
+
+      const putData = await putRes.json();
+
+      // Sucesso
+      this.style.opacity = '0';
+      this.style.transition = 'opacity 0.4s';
+      setTimeout(() => {
+        this.style.display = 'none';
+        document.getElementById('recordId').textContent =
+          `ID do registro: ${putData.metadata?.id || JSONBIN_BIN_ID} · ${payload.data_hora}`;
+        document.getElementById('successScreen').classList.add('show');
+      }, 400);
+
+    } catch (err) {
+      // Erro
+      btn.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoad.style.display = 'none';
+      errMsg.style.display  = 'block';
+
+      if (err.message.includes('COLOQUE')) {
+        errMsg.innerHTML = '⚠️ Configure sua chave JSONBin.io no código.<br><small>Crie uma conta grátis em <a href="https://jsonbin.io" target="_blank" style="color:var(--cyan)">jsonbin.io</a> e substitua JSONBIN_API_KEY e JSONBIN_BIN_ID.</small>';
+      } else {
+        errMsg.textContent = '❌ Falha ao enviar. Verifique sua conexão e tente novamente.';
+      }
+      console.error('Erro JSONBin:', err);
+    }
+  });
+</script>
+</body>
+</html>
